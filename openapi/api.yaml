@@ -1,0 +1,81 @@
+openapi: 3.0.3
+info:
+  title: Serverless SaaS Ticket System - API
+  version: 1.0.0
+servers:
+  - url: https://your-api-gateway-url
+
+paths:
+  /tickets:
+    post:
+      summary: Create new ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketInput'
+      responses:
+        '201':
+          description: Ticket created
+    get:
+      summary: Get all tickets
+      responses:
+        '200':
+          description: List of tickets
+  /tickets/{id}:
+    get:
+      summary: Get ticket by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ticket found
+    put:
+      summary: Update ticket by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketInput'
+      responses:
+        '200':
+          description: Ticket updated
+    delete:
+      summary: Delete ticket by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Ticket deleted
+
+components:
+  schemas:
+    TicketInput:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [OPEN, IN_PROGRESS, CLOSED]
