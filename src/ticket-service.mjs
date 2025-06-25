@@ -1,5 +1,5 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { ConditionalCheckFailedException, DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 
 const tableName = "dyn-tickets";
@@ -7,7 +7,7 @@ const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
 export class TicketService {
-  
+
   static async createTicket(data) {
     const ticket = {
       id: uuidv4(),
@@ -60,52 +60,57 @@ export class TicketService {
   }
 
   static async updateTicket(id, data) {
-    const existingTicket = await this.getTicketById(id);
+    try {
+      const command = new UpdateCommand({
+        TableName: tableName,
+        Key: { id },
+        UpdateExpression: "set title = :title, description = :description, #status = :status",
+        ExpressionAttributeNames: {
+          "#status": "status"
+        },
+        ExpressionAttributeValues: {
+          ":title": data.title,
+          ":description": data.description,
+          ":status": data.status ?? 'OPEN'
+        },
+        ReturnValues: "ALL_NEW",
+        ConditionExpression: "attribute_exists(id)" // Si el ID no existe, lanza ConditionalCheckFailedException
+      });
 
-    if (!existingTicket) {
-      throw new Error("NOT_FOUND");
+      const response = await docClient.send(command);
+      console.log({ response });
+      console.log({ response: JSON.stringify(response) });
+      return response.Attributes;
+
+    } catch (error) {
+      if (error instanceof ConditionalCheckFailedException) {
+        throw new Error("NOT_FOUND");
+      }
+
+      throw error;
     }
-
-    const command = new UpdateCommand({
-      TableName: tableName,
-      Key: { id },
-      UpdateExpression: "set title = :title, description = :description, #status = :status",
-      ExpressionAttributeNames: {
-        "#status": "status"
-      },
-      ExpressionAttributeValues: {
-        ":title": data.title,
-        ":description": data.description,
-        ":status": data.status ?? 'OPEN'
-      },
-      ReturnValues: "ALL_NEW",
-      ConditionExpression: "attribute_exists(id)" // Evita que se creen un nuevo item inexistente
-    });
-
-    const response = await docClient.send(command);
-    console.log({ response });
-    console.log({ response: JSON.stringify(response) });
-    return response.Attributes;
   }
 
   static async deleteTicket(id) {
-    const existingTicket = await this.getTicketById(id);
+    try {
+      const command = new DeleteCommand({
+        TableName: tableName,
+        Key: {
+          id
+        },
+        ConditionExpression: "attribute_exists(id)" // Si el ID no existe, lanza ConditionalCheckFailedException
+      });
 
-    if (!existingTicket) {
-      throw new Error("NOT_FOUND");
+      const response = await docClient.send(command);
+      console.log({ response });
+      console.log({ response: JSON.stringify(response) });
+      return response;
+    } catch (error) {
+      if (error instanceof ConditionalCheckFailedException) {
+        throw new Error("NOT_FOUND");
+      }
+
+      throw error;
     }
-
-    const command = new DeleteCommand({
-      TableName: tableName,
-      Key: {
-        id
-      },
-      ConditionExpression: "attribute_exists(id)"
-    });
-
-    const response = await docClient.send(command);
-    console.log({ response });
-    console.log({ response: JSON.stringify(response) });
-    return response;
   }
 }
