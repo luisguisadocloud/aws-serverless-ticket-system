@@ -1,10 +1,33 @@
 import { TicketService } from "./ticket-service.mjs";
 
+// Logic refactor
+
+// Refactor: Utility functions for routes
+function isCreateTicketRoute(method, path) {
+  return method === "POST" && path === "/tickets";
+}
+
+function isGetAllTicketsRoute(method, path) {
+  return method === "GET" && path === "/tickets";
+}
+
+function isGetTicketByIdRoute(method, path, id) {
+  return method === "GET" && path.startsWith("/tickets/") && id;
+}
+
+function isUpdateTicketRoute(method, path, id) {
+  return method === "PUT" && path.startsWith("/tickets/") && id;
+}
+
+function isDeleteTicketRoute(method, path, id) {
+  return method === "DELETE" && path.startsWith("/tickets/") && id;
+}
+
 export const handler = async (event) => {
   const { httpMethod: method, path } = event;
   const id = event.pathParameters?.id;
 
-  if (method === "POST" && path === "/tickets") {
+  if (isCreateTicketRoute(method, path)) {
     const body = JSON.parse(event.body);
     console.log("Create ticket", { body });
     const response = await TicketService.createTicket(body);
@@ -14,7 +37,7 @@ export const handler = async (event) => {
       body: JSON.stringify(response)
     };
 
-  } else if (method === "GET" && path === "/tickets") {
+  } else if (isGetAllTicketsRoute(method, path)) {
     console.log("Get all tickets");
     const tickets = await TicketService.getAllTickets();
     return {
@@ -22,7 +45,7 @@ export const handler = async (event) => {
       body: JSON.stringify(tickets)
     };
 
-  } else if (method === "GET" && path.startsWith("/tickets/") && id) {
+  } else if (isGetTicketByIdRoute(method, path, id)) {
     console.log(`Get ticket by id=${id}`);
     const ticket = await TicketService.getTicketById(id);
 
@@ -38,7 +61,7 @@ export const handler = async (event) => {
       body: JSON.stringify(ticket)
     };
 
-  } else if (method === "PUT" && path.startsWith("/tickets/") && id) {
+  } else if (isUpdateTicketRoute(method, path, id)) {
     const body = JSON.parse(event.body);
     console.log(`Update ticket with id=${id}`, { body });
 
@@ -65,7 +88,7 @@ export const handler = async (event) => {
       };
     }
 
-  } else if (method === "DELETE" && path.startsWith("/tickets/") && id) {
+  } else if (isDeleteTicketRoute(method, path, id)) {
     console.log(`Delete by id={$id}`);
     try {
       await TicketService.deleteTicket(id);
