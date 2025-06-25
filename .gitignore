@@ -1,0 +1,37 @@
+# Dependencias
+node_modules/
+
+# Archivos de construcción
+*.zip
+
+# Archivos de construcción
+dist/
+build/
+
+# Archivos de entorno
+.env
+.env.local
+.env.*.local
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de IDE y editores
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*.bak
+
+# Logs
+logs/
+*.log
+
+# Archivos de cobertura de pruebas
+coverage/
+
+# Archivos temporales
+tmp/
+temp/
