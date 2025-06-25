@@ -67,7 +67,7 @@ async function handleUpdateTicket(event, id) {
 }
 
 async function handleDeleteTicket(id) {
-  console.log(`Delete by id={$id}`);
+  console.log(`Delete by id=${id}`);
   try {
     await TicketService.deleteTicket(id);
 
