@@ -2,6 +2,7 @@ import { ConditionalCheckFailedException, DynamoDBClient } from '@aws-sdk/client
 import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { Ticket, TicketStatus } from '../types/ticket';
+import { NotFoundError } from '../errors/not-found-error';
 const tableName = "dyn-tickets";
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -85,7 +86,7 @@ export class TicketService {
 
     } catch (error) {
       if (error instanceof ConditionalCheckFailedException) {
-        throw new Error("NOT_FOUND");
+        throw new NotFoundError(`Ticket with id ${id} not found`);
       }
 
       throw error;
@@ -107,7 +108,7 @@ export class TicketService {
       console.log({ response: JSON.stringify(response) });
     } catch (error) {
       if (error instanceof ConditionalCheckFailedException) {
-        throw new Error("NOT_FOUND");
+        throw new NotFoundError(`Ticket with id ${id} not found`);
       }
 
       throw error;

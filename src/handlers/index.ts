@@ -1,4 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { HttpError } from "../errors/http-error";
+import { NotFoundError } from "../errors/not-found-error";
 import { TicketService } from "../services/ticket-service";
 
 // Refactor: Functions for route handling
@@ -27,10 +29,7 @@ async function handleGetTicketById(id: string) {
   const ticket = await TicketService.getTicketById(id);
 
   if (!ticket) {
-    return {
-      statusCode: 404,
-      body: JSON.stringify({ message: `ticket ${id} not found` })
-    };
+    throw new NotFoundError(`ticket ${id} not found`);
   }
 
   return {
@@ -52,18 +51,8 @@ async function handleUpdateTicket(event: APIGatewayProxyEvent, id: string) {
     };
 
   } catch (error) {
-    if (error instanceof Error && error.message === "NOT_FOUND") {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ message: `Ticket with id=${id} not found.` })
-      };
-    }
-
     console.error(`Error updating ticket ${id}:`, error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: "Internal Server Error" })
-    };
+    throw error;
   }
 }
 
@@ -77,18 +66,8 @@ async function handleDeleteTicket(id: string) {
       body: ""
     };
   } catch (error) {
-    if (error instanceof Error && error.message === "NOT_FOUND") {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ message: `Ticket with id=${id} not found.` })
-      };
-    }
-
     console.error(`Error deleting ticket ${id}`, error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: "Internal Server Error" })
-    };
+    throw error;
   }
 }
 
@@ -114,28 +93,42 @@ function isDeleteTicketRoute(method: string, path: string, id: string) {
 }
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const { httpMethod: method, path } = event;
-  const id = event.pathParameters?.id;
+  try {
+    const { httpMethod: method, path } = event;
+    const id = event.pathParameters?.id;
 
-  if (isCreateTicketRoute(method, path)) {
-    return await handleCreateTicket(event);
+    if (isCreateTicketRoute(method, path)) {
+      return await handleCreateTicket(event);
 
-  } else if (isGetAllTicketsRoute(method, path)) {
-    return await handleGetAllTickets();
+    } else if (isGetAllTicketsRoute(method, path)) {
+      return await handleGetAllTickets();
 
-  } else if (isGetTicketByIdRoute(method, path, id!)) {
-    return await handleGetTicketById(id!);
+    } else if (isGetTicketByIdRoute(method, path, id!)) {
+      return await handleGetTicketById(id!);
 
-  } else if (isUpdateTicketRoute(method, path, id!)) {
-    return await handleUpdateTicket(event, id!);
+    } else if (isUpdateTicketRoute(method, path, id!)) {
+      return await handleUpdateTicket(event, id!);
 
-  } else if (isDeleteTicketRoute(method, path, id!)) {
-    return await handleDeleteTicket(id!);
+    } else if (isDeleteTicketRoute(method, path, id!)) {
+      return await handleDeleteTicket(id!);
+    }
+
+    // Route not found
+    throw new NotFoundError("Route not found");
+
+  } catch (error) {
+    console.error("Error", { error });
+    // HttpError, BadRequestError, NotFoundError
+    if (error instanceof HttpError) {
+      return {
+        statusCode: error.statusCode,
+        body: JSON.stringify({ message: error.message, details: error.details ?? undefined })
+      };
+    }
+
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: "Internal Server Error" })
+    };
   }
-
-  // Route not found
-  return {
-    statusCode: 400,
-    body: JSON.stringify({ message: "Bad request" })
-  };
 }
