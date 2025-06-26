@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
-    "zip": "zip -r deployment.zip dist node_modules"
+    "build": "esbuild src/handlers/index.ts --bundle --platform=node --target=node20 --outfile=dist/handlers/index.js",
+    "zip": "zip -r deployment.zip dist"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +18,7 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.150",
+    "esbuild": "^0.25.5",
     "typescript": "^5.8.3"
   }
 }
