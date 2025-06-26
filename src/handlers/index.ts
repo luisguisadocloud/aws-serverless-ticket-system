@@ -1,8 +1,9 @@
-import { TicketService } from "./ticket-service.mjs";
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { TicketService } from "../services/ticket-service";
 
 // Refactor: Functions for route handling
-async function handleCreateTicket(event) {
-  const body = JSON.parse(event.body);
+async function handleCreateTicket(event: APIGatewayProxyEvent) {
+  const body = JSON.parse(event.body!);
   console.log("Create ticket", { body });
   const response = await TicketService.createTicket(body);
 
@@ -21,7 +22,7 @@ async function handleGetAllTickets() {
   };
 }
 
-async function handleGetTicketById(id) {
+async function handleGetTicketById(id: string) {
   console.log(`Get ticket by id=${id}`);
   const ticket = await TicketService.getTicketById(id);
 
@@ -38,8 +39,8 @@ async function handleGetTicketById(id) {
   };
 }
 
-async function handleUpdateTicket(event, id) {
-  const body = JSON.parse(event.body);
+async function handleUpdateTicket(event: APIGatewayProxyEvent, id: string) {
+  const body = JSON.parse(event.body!);
   console.log(`Update ticket with id=${id}`, { body });
 
   try {
@@ -51,7 +52,7 @@ async function handleUpdateTicket(event, id) {
     };
 
   } catch (error) {
-    if (error.message === "NOT_FOUND") {
+    if (error instanceof Error && error.message === "NOT_FOUND") {
       return {
         statusCode: 404,
         body: JSON.stringify({ message: `Ticket with id=${id} not found.` })
@@ -66,7 +67,7 @@ async function handleUpdateTicket(event, id) {
   }
 }
 
-async function handleDeleteTicket(id) {
+async function handleDeleteTicket(id: string) {
   console.log(`Delete by id=${id}`);
   try {
     await TicketService.deleteTicket(id);
@@ -76,7 +77,7 @@ async function handleDeleteTicket(id) {
       body: ""
     };
   } catch (error) {
-    if (error.message === "NOT_FOUND") {
+    if (error instanceof Error && error.message === "NOT_FOUND") {
       return {
         statusCode: 404,
         body: JSON.stringify({ message: `Ticket with id=${id} not found.` })
@@ -92,27 +93,27 @@ async function handleDeleteTicket(id) {
 }
 
 // Refactor: Utility functions for routes
-function isCreateTicketRoute(method, path) {
+function isCreateTicketRoute(method: string, path: string) {
   return method === "POST" && path === "/tickets";
 }
 
-function isGetAllTicketsRoute(method, path) {
+function isGetAllTicketsRoute(method: string, path: string) {
   return method === "GET" && path === "/tickets";
 }
 
-function isGetTicketByIdRoute(method, path, id) {
+function isGetTicketByIdRoute(method: string, path: string, id: string) {
   return method === "GET" && path.startsWith("/tickets/") && id;
 }
 
-function isUpdateTicketRoute(method, path, id) {
+function isUpdateTicketRoute(method: string, path: string, id: string) {
   return method === "PUT" && path.startsWith("/tickets/") && id;
 }
 
-function isDeleteTicketRoute(method, path, id) {
+function isDeleteTicketRoute(method: string, path: string, id: string) {
   return method === "DELETE" && path.startsWith("/tickets/") && id;
 }
 
-export const handler = async (event) => {
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   const { httpMethod: method, path } = event;
   const id = event.pathParameters?.id;
 
@@ -122,14 +123,14 @@ export const handler = async (event) => {
   } else if (isGetAllTicketsRoute(method, path)) {
     return await handleGetAllTickets();
 
-  } else if (isGetTicketByIdRoute(method, path, id)) {
-    return await handleGetTicketById(id);
+  } else if (isGetTicketByIdRoute(method, path, id!)) {
+    return await handleGetTicketById(id!);
 
-  } else if (isUpdateTicketRoute(method, path, id)) {
-    return await handleUpdateTicket(event, id);
+  } else if (isUpdateTicketRoute(method, path, id!)) {
+    return await handleUpdateTicket(event, id!);
 
-  } else if (isDeleteTicketRoute(method, path, id)) {
-    return await handleDeleteTicket(id);
+  } else if (isDeleteTicketRoute(method, path, id!)) {
+    return await handleDeleteTicket(id!);
   }
 
   // Route not found

@@ -1,35 +1,34 @@
 import { ConditionalCheckFailedException, DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
-
+import { Ticket, TicketStatus } from '../types/ticket';
 const tableName = "dyn-tickets";
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
 export class TicketService {
-
-  static async createTicket(data) {
-    const ticket = {
+  static async createTicket(reqCreateTicket: any): Promise<Ticket> {
+    const newTicket: Ticket = {
       id: uuidv4(),
-      title: data.title,
-      description: data.description,
-      status: "OPEN",
+      title: reqCreateTicket.title,
+      description: reqCreateTicket.description,
+      status: reqCreateTicket.status ?? TicketStatus.OPEN,
       createdAt: new Date().toISOString()
     };
 
     const command = new PutCommand({
       TableName: tableName,
-      Item: ticket
+      Item: newTicket
     });
 
     const response = await docClient.send(command);
     console.log({ response });
     console.log({ response: JSON.stringify(response) });
 
-    return ticket;
+    return newTicket;
   }
 
-  static async getAllTickets() {
+  static async getAllTickets(): Promise<Ticket[]> {
     const command = new ScanCommand({
       ProjectionExpression: "id, createdAt, description, #status, title",
       ExpressionAttributeNames: { "#status": "status" },
@@ -37,15 +36,17 @@ export class TicketService {
     });
 
     const response = await docClient.send(command);
+    const tickets: Ticket[] = (response.Items ?? []) as Ticket[];
     console.log({ response });
     console.log({ response: JSON.stringify(response) });
-    for (const ticket of response.Items) {
+
+    for (const ticket of tickets) {
       console.log(`${ticket.id} - (${ticket.createdAt}, ${ticket.description}, ${ticket.status}, ${ticket.title})`);
     }
-    return response.Items ?? [];
+    return tickets;
   }
 
-  static async getTicketById(id) {
+  static async getTicketById(id: string): Promise<Ticket | undefined> {
     const command = new GetCommand({
       TableName: tableName,
       Key: {
@@ -56,10 +57,10 @@ export class TicketService {
     const response = await docClient.send(command);
     console.log({ response });
     console.log({ response: JSON.stringify(response) });
-    return response.Item;
+    return response.Item as Ticket;
   }
 
-  static async updateTicket(id, data) {
+  static async updateTicket(id: string, reqUpdateTicket: any): Promise<Record<string, any> | undefined> {
     try {
       const command = new UpdateCommand({
         TableName: tableName,
@@ -69,9 +70,9 @@ export class TicketService {
           "#status": "status"
         },
         ExpressionAttributeValues: {
-          ":title": data.title,
-          ":description": data.description,
-          ":status": data.status ?? 'OPEN'
+          ":title": reqUpdateTicket.title,
+          ":description": reqUpdateTicket.description,
+          ":status": reqUpdateTicket.status ?? 'OPEN'
         },
         ReturnValues: "ALL_NEW",
         ConditionExpression: "attribute_exists(id)" // Si el ID no existe, lanza ConditionalCheckFailedException
@@ -91,7 +92,7 @@ export class TicketService {
     }
   }
 
-  static async deleteTicket(id) {
+  static async deleteTicket(id: string): Promise<void> {
     try {
       const command = new DeleteCommand({
         TableName: tableName,
@@ -104,7 +105,6 @@ export class TicketService {
       const response = await docClient.send(command);
       console.log({ response });
       console.log({ response: JSON.stringify(response) });
-      return response;
     } catch (error) {
       if (error instanceof ConditionalCheckFailedException) {
         throw new Error("NOT_FOUND");
