@@ -1,31 +1,82 @@
-openapi: 3.0.3
+openapi: 3.0.4
 info:
-  title: Serverless SaaS Ticket System - API
+  title: Serverless Ticket System - API
   version: 1.0.0
-servers:
-  - url: https://your-api-gateway-url
+  description: REST API for a serverless ticket system built with AWS Lambda and API Gateway.
 
 paths:
   /tickets:
     post:
+      security:
+      - bearerAuth: []
       summary: Create new ticket
+      operationId: createTicket
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TicketInput'
+              $ref: '#/components/schemas/CreateTicketRequest'
+            examples:
+              example1:
+                summary: Basic ticket
+                value:
+                  title: Bug in production
+                  description: Users cannot log in
+                  status: OPEN
+              example2:
+                summary: Urgent ticket
+                value:
+                  title: Bug in production
+                  description: Users cannot log in
+                  status: OPEN
       responses:
         '201':
           description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+              examples:
+                CreateTicketUrgent:
+                  summary: Urgent support request
+                  value:
+                    id: "1b2c3d4e-5678-90ab-cdef-1234567890ab"
+                    title: Database down
+                    description: Cannot access data, clients affected
+                    status: IN_PROGRESS
+                    createdAt: "2024-06-27T10:00:00Z"
+                    updatedAt: "2024-06-27T10:00:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
     get:
+      security:
+      - bearerAuth: []
       summary: Get all tickets
+      operationId: listTickets
       responses:
         '200':
           description: List of tickets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListTicketResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /tickets/{id}:
     get:
+      security:
+      - bearerAuth: []
       summary: Get ticket by ID
+      operationId: getTicket
       parameters:
         - in: path
           name: id
@@ -35,8 +86,22 @@ paths:
       responses:
         '200':
           description: Ticket found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
     put:
+      security:
+      - bearerAuth: []
       summary: Update ticket by ID
+      operationId: updateTicket
       parameters:
         - in: path
           name: id
@@ -48,12 +113,27 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TicketInput'
+              $ref: '#/components/schemas/UpdateTicketRequest'
+              
       responses:
         '200':
           description: Ticket updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
     delete:
+      security:
+      - bearerAuth: []
       summary: Delete ticket by ID
+      operationId: deleteTicket
       parameters:
         - in: path
           name: id
@@ -63,14 +143,23 @@ paths:
       responses:
         '204':
           description: Ticket deleted
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
-    TicketInput:
+    TicketBase:
       type: object
-      required:
-        - title
-        - description
       properties:
         title:
           type: string
@@ -79,3 +168,104 @@ components:
         status:
           type: string
           enum: [OPEN, IN_PROGRESS, CLOSED]
+          
+    CreateTicketRequest:
+      allOf:
+        - $ref: '#/components/schemas/TicketBase'
+        - type: object
+          required:
+          - title
+          - description
+        
+    UpdateTicketRequest:
+      allOf:
+        - $ref: '#/components/schemas/TicketBase'
+        - type: object
+          required:
+            - title
+            - description
+            - status
+        
+    
+    TicketResponse:
+      allOf:
+        - $ref: '#/components/schemas/TicketBase'
+        - type: object
+          required:
+            - title
+            - description
+            - status
+            - id
+            - createdAt
+            - updatedAt
+          properties:
+            id:
+              type: string
+              format: uuid
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+              
+    ListTicketResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/TicketResponse'
+   
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          nullable: true
+
+  responses:
+    UnauthorizedError:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: unauthorized
+            message: Missing bearer token
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: ticket_not_found
+            message: Ticket not found
+
+    BadRequestError:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: bad_request
+            message: Validation failed
+
+    InternalServerError:
+      description: Unexpected internal error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: internal_server_error
+            message: Unexpected server error
