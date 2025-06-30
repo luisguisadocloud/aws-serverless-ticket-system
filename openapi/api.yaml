@@ -167,7 +167,7 @@ components:
           type: string
         status:
           type: string
-          enum: [OPEN, IN_PROGRESS, CLOSED]
+          enum: [NEW, OPEN, IN_PROGRESS, RESOLVED, CLOSED]
           
     CreateTicketRequest:
       allOf:
