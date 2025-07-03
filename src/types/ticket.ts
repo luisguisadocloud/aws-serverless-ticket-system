@@ -1,7 +1,9 @@
 export enum TicketStatus {
+  NEW = "NEW",
   OPEN = "OPEN",
+  IN_PROGRESS = "IN_PROGRESS",
+  RESOLVED = "RESOLVED",
   CLOSED = "CLOSED",
-  IN_PROGRESS = "IN_PROGRESS"
 };
 
 export interface Ticket {
@@ -10,4 +12,5 @@ export interface Ticket {
   description: string;
   status: TicketStatus;
   createdAt: string;
+  updatedAt?: string;
 }

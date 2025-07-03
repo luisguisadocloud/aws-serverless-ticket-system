@@ -71,6 +71,25 @@ async function handleDeleteTicket(id: string) {
   }
 }
 
+async function handlePatchTicket(event: APIGatewayProxyEvent, id: string) {
+  const body = JSON.parse(event.body!);
+  const status = body.status;
+  console.log(`Patch ticket with id=${id}`, { body });
+
+  try {
+    const updated = await TicketService.patchTicket(id, status);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(updated)
+    };
+
+  } catch (error) {
+    console.error(`Error updating status ticket ${id}:`, error);
+    throw error;
+  }
+}
+
 // Refactor: Utility functions for routes
 function isCreateTicketRoute(method: string, path: string) {
   return method === "POST" && path === "/tickets";
@@ -92,8 +111,13 @@ function isDeleteTicketRoute(method: string, path: string, id: string) {
   return method === "DELETE" && path.startsWith("/tickets/") && id;
 }
 
+function isPatchTicketRoute(method: string, path: string, id: string) {
+  return method === "PATCH" && path.startsWith("/tickets/") && id;
+}
+
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
+    console.log("event: ", { event });
     const { httpMethod: method, path } = event;
     const id = event.pathParameters?.id;
 
@@ -111,6 +135,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     } else if (isDeleteTicketRoute(method, path, id!)) {
       return await handleDeleteTicket(id!);
+
+    } else if (isPatchTicketRoute(method, path, id!)) {
+      return await handlePatchTicket(event, id!);
     }
 
     // Route not found

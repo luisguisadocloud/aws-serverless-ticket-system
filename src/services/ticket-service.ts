@@ -13,7 +13,7 @@ export class TicketService {
       id: uuidv4(),
       title: reqCreateTicket.title,
       description: reqCreateTicket.description,
-      status: reqCreateTicket.status ?? TicketStatus.OPEN,
+      status: reqCreateTicket.status ?? TicketStatus.NEW,
       createdAt: new Date().toISOString()
     };
 
@@ -74,6 +74,37 @@ export class TicketService {
           ":title": reqUpdateTicket.title,
           ":description": reqUpdateTicket.description,
           ":status": reqUpdateTicket.status ?? 'OPEN'
+        },
+        ReturnValues: "ALL_NEW",
+        ConditionExpression: "attribute_exists(id)" // Si el ID no existe, lanza ConditionalCheckFailedException
+      });
+
+      const response = await docClient.send(command);
+      console.log({ response });
+      console.log({ response: JSON.stringify(response) });
+      return response.Attributes;
+
+    } catch (error) {
+      if (error instanceof ConditionalCheckFailedException) {
+        throw new NotFoundError(`Ticket with id ${id} not found`);
+      }
+
+      throw error;
+    }
+  }
+
+  static async patchTicket(id: string, status: TicketStatus): Promise<Record<string, any> | undefined> {
+    try {
+      const command = new UpdateCommand({
+        TableName: tableName,
+        Key: { id },
+        UpdateExpression: "set #status = :status, updatedAt = :updatedAt",
+        ExpressionAttributeNames: {
+          "#status": "status"
+        },
+        ExpressionAttributeValues: {
+          ":status": status,
+          ":updatedAt": new Date().toISOString()
         },
         ReturnValues: "ALL_NEW",
         ConditionExpression: "attribute_exists(id)" // Si el ID no existe, lanza ConditionalCheckFailedException
