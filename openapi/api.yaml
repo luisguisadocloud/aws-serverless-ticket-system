@@ -1,12 +1,21 @@
 openapi: 3.0.4
 info:
   title: Serverless Ticket System - API
-  version: 1.0.0
   description: REST API for a serverless ticket system built with AWS Lambda and API Gateway.
-
+  contact:
+    email: lguisadom@gmail.com
+  version: 1.0.0
+externalDocs:
+  description: My Blog
+  url: https://blog.luisguisado.cloud
+tags:
+  - name: Ticket
+    description: Digital record used to track and manage support requests, problems, or incidents.
 paths:
   /tickets:
     post:
+      tags:
+        - Ticket
       security:
       - bearerAuth: []
       summary: Create new ticket
@@ -55,6 +64,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
     get:
+      tags:
+        - Ticket
       security:
       - bearerAuth: []
       summary: Get all tickets
@@ -73,6 +84,8 @@ paths:
 
   /tickets/{id}:
     get:
+      tags:
+        - Ticket
       security:
       - bearerAuth: []
       summary: Get ticket by ID
@@ -98,6 +111,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
     put:
+      tags:
+        - Ticket
       security:
       - bearerAuth: []
       summary: Update ticket by ID
@@ -130,6 +145,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
     delete:
+      tags:
+        - Ticket
       security:
       - bearerAuth: []
       summary: Delete ticket by ID
