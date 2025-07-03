@@ -166,7 +166,45 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-
+          
+  /tickets/{id}/status:
+    patch:
+      tags:
+        - Ticket
+      security:
+      - bearerAuth: []
+      summary: Update ticket status by ID
+      operationId: updateTicketStatus
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [NEW, OPEN, IN_PROGRESS, RESOLVED, CLOSED]
+      responses:
+        '204':
+          description: status Ticket updated
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+                
 components:
   securitySchemes:
     bearerAuth:
@@ -202,7 +240,6 @@ components:
             - title
             - description
             - status
-        
     
     TicketResponse:
       allOf:
