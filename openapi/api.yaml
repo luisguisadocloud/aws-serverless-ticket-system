@@ -17,7 +17,7 @@ paths:
       tags:
         - Ticket
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       summary: Create new ticket
       operationId: createTicket
       requestBody:
@@ -25,7 +25,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateTicketRequest'
+              $ref: "#/components/schemas/CreateTicketRequest"
             examples:
               example1:
                 summary: Basic ticket
@@ -40,12 +40,12 @@ paths:
                   description: Users cannot log in
                   status: OPEN
       responses:
-        '201':
+        "201":
           description: Ticket created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketResponse'
+                $ref: "#/components/schemas/TicketResponse"
               examples:
                 CreateTicketUrgent:
                   summary: Urgent support request
@@ -56,38 +56,38 @@ paths:
                     status: IN_PROGRESS
                     createdAt: "2024-06-27T10:00:00Z"
                     updatedAt: "2024-06-27T10:00:00Z"
-        '400':
-          $ref: '#/components/responses/BadRequestError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
     get:
       tags:
         - Ticket
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       summary: Get all tickets
       operationId: listTickets
       responses:
-        '200':
+        "200":
           description: List of tickets
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListTicketResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/ListTicketResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /tickets/{id}:
     get:
       tags:
         - Ticket
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       summary: Get ticket by ID
       operationId: getTicket
       parameters:
@@ -97,24 +97,24 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Ticket found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/TicketResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
     put:
       tags:
         - Ticket
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       summary: Update ticket by ID
       operationId: updateTicket
       parameters:
@@ -128,27 +128,27 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateTicketRequest'
-              
+              $ref: "#/components/schemas/UpdateTicketRequest"
+
       responses:
-        '200':
+        "200":
           description: Ticket updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/TicketResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
     delete:
       tags:
         - Ticket
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       summary: Delete ticket by ID
       operationId: deleteTicket
       parameters:
@@ -158,21 +158,21 @@ paths:
           schema:
             type: string
       responses:
-        '204':
+        "204":
           description: Ticket deleted
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-          
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /tickets/{id}/status:
     patch:
       tags:
         - Ticket
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       summary: Update ticket status by ID
       operationId: updateTicketStatus
       parameters:
@@ -194,17 +194,17 @@ paths:
                   type: string
                   enum: [NEW, OPEN, IN_PROGRESS, RESOLVED, CLOSED]
       responses:
-        '204':
+        "204":
           description: status Ticket updated
-        '400':
-          $ref: '#/components/responses/BadRequestError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-                
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -223,27 +223,27 @@ components:
         status:
           type: string
           enum: [NEW, OPEN, IN_PROGRESS, RESOLVED, CLOSED]
-          
+
     CreateTicketRequest:
       allOf:
-        - $ref: '#/components/schemas/TicketBase'
+        - $ref: "#/components/schemas/TicketBase"
         - type: object
           required:
-          - title
-          - description
-        
+            - title
+            - description
+
     UpdateTicketRequest:
       allOf:
-        - $ref: '#/components/schemas/TicketBase'
+        - $ref: "#/components/schemas/TicketBase"
         - type: object
           required:
             - title
             - description
             - status
-    
+
     TicketResponse:
       allOf:
-        - $ref: '#/components/schemas/TicketBase'
+        - $ref: "#/components/schemas/TicketBase"
         - type: object
           required:
             - title
@@ -262,12 +262,12 @@ components:
             updatedAt:
               type: string
               format: date-time
-              
+
     ListTicketResponse:
       type: array
       items:
-        $ref: '#/components/schemas/TicketResponse'
-   
+        $ref: "#/components/schemas/TicketResponse"
+
     ErrorResponse:
       type: object
       required: [code, message]
@@ -289,7 +289,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
           example:
             code: unauthorized
             message: Missing bearer token
@@ -299,7 +299,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
           example:
             code: ticket_not_found
             message: Ticket not found
@@ -309,7 +309,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
           example:
             code: bad_request
             message: Validation failed
@@ -319,7 +319,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
           example:
             code: internal_server_error
             message: Unexpected server error
