@@ -279,8 +279,7 @@ components:
         details:
           type: array
           items:
-            type: object
-            additionalProperties: true
+            type: string
           nullable: true
 
   responses:
@@ -313,6 +312,9 @@ components:
           example:
             code: bad_request
             message: Validation failed
+            details:
+             - name too long
+             - description max long is 100 characteres 
 
     InternalServerError:
       description: Unexpected internal error
