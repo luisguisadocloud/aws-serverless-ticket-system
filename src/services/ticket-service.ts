@@ -1,19 +1,20 @@
 import { ConditionalCheckFailedException, DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
-import { Ticket, TicketStatus } from '../types/ticket';
 import { NotFoundError } from '../errors/not-found-error';
+import { CreateTicketDto } from '../schemas/schemas';
+import { Ticket, TicketStatus } from '../types/ticket';
 const tableName = "dyn-tickets";
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
 export class TicketService {
-  static async createTicket(reqCreateTicket: any): Promise<Ticket> {
+  static async createTicket(createTicketDto: CreateTicketDto): Promise<Ticket> {
     const newTicket: Ticket = {
       id: uuidv4(),
-      title: reqCreateTicket.title,
-      description: reqCreateTicket.description,
-      status: reqCreateTicket.status ?? TicketStatus.NEW,
+      title: createTicketDto.title,
+      description: createTicketDto.description,
+      status: createTicketDto.status ?? TicketStatus.NEW,
       createdAt: new Date().toISOString()
     };
 

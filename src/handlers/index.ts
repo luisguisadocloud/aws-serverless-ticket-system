@@ -2,17 +2,40 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { HttpError } from "../errors/http-error";
 import { NotFoundError } from "../errors/not-found-error";
 import { TicketService } from "../services/ticket-service";
+import { BadRequestError } from "../errors/bad-request.error";
+import { CreateTicketDto, CreateTicketRequest } from "../schemas/schemas";
+import z from 'zod';
 
 // Refactor: Functions for route handling
 async function handleCreateTicket(event: APIGatewayProxyEvent) {
-  const body = JSON.parse(event.body!);
-  console.log("Create ticket", { body });
-  const response = await TicketService.createTicket(body);
+  try {
+    if (!event.body) {
+      throw new BadRequestError("Validation failed", ["Body not found"]);
+    }
 
-  return {
-    statusCode: 201,
-    body: JSON.stringify(response)
-  };
+    if (typeof event.body !== 'string') {
+      throw new BadRequestError("Validation failed", ["Body is not string"]);
+    }
+
+    const body = JSON.parse(event.body);
+    const createTicketDto: CreateTicketDto = CreateTicketRequest.parse(body);
+
+    console.log("Create ticket", { body });
+    const response = await TicketService.createTicket(createTicketDto);
+
+    return {
+      statusCode: 201,
+      body: JSON.stringify(response)
+    };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      console.error("Error issues", { issues: error.issues, message: error.message });
+      const errorMessages = error.issues.map(issue => `${issue.path.join(".")} - ${issue.message}`);
+      throw new BadRequestError("Validation failed", errorMessages);
+    }
+
+    throw error;
+  }
 }
 
 async function handleGetAllTickets() {
