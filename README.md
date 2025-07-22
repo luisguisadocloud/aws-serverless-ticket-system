@@ -1,143 +1,182 @@
-# Sistema de Tickets Backend
+# Ticket System Backend
 
-## Descripción
+## Description
 
-Este es un sistema de gestión de tickets backend construido con **AWS Lambda** y **API Gateway** utilizando **TypeScript**. La aplicación proporciona una API REST completa para crear, leer, actualizar y eliminar tickets de soporte técnico.
+This is a ticket management system backend built with **AWS Lambda** and **API Gateway** using **TypeScript**. The application provides a complete REST API for creating, reading, updating, and deleting technical support tickets.
 
-## Arquitectura
+## Architecture
 
 - **Runtime**: Node.js 20 (AWS Lambda)
-- **Base de Datos**: Amazon DynamoDB
-- **API**: REST API con AWS API Gateway
-- **Lenguaje**: TypeScript
-- **Bundler**: esbuild para optimización
-- **Validación**: Zod para validación de esquemas
+- **Database**: Amazon DynamoDB
+- **API**: REST API with AWS API Gateway
+- **Language**: TypeScript
+- **Bundler**: esbuild for optimization
+- **Validation**: Zod for schema validation
 
-## Estructura del Proyecto
+## Project Structure
 
 ```
 ticket-system-backend/
 ├── openapi/
-│   └── api.yaml          # Especificación OpenAPI 3.0
+│   └── api.yaml          # OpenAPI 3.0 specification
 ├── src/
-│   ├── errors/           # Clases de errores personalizadas
-│   ├── handlers/         # Manejadores de Lambda
-│   ├── schemas/          # Esquemas de validación Zod
-│   ├── services/         # Lógica de negocio
-│   ├── types/           # Tipos TypeScript
-│   ├── utils/           # Utilidades
-│   └── validations/     # Validaciones adicionales
+│   ├── errors/           # Custom error classes
+│   ├── handlers/         # Lambda handlers
+│   ├── schemas/          # Zod validation schemas
+│   ├── services/         # Business logic
+│   ├── types/           # TypeScript types
+│   ├── utils/           # Utilities
+│   └── validations/     # Additional validations
 ├── package.json
 ├── tsconfig.json
 └── README.md
 ```
 
-## Funcionalidades
+## Features
 
-### Endpoints de la API
+### API Endpoints
 
-- **POST** `/tickets` - Crear un nuevo ticket
-- **GET** `/tickets` - Obtener todos los tickets
-- **GET** `/tickets/{id}` - Obtener un ticket por ID
-- **PUT** `/tickets/{id}` - Actualizar un ticket completo
-- **PATCH** `/tickets/{id}/status` - Actualizar solo el estado del ticket
-- **DELETE** `/tickets/{id}` - Eliminar un ticket
+- **POST** `/tickets` - Create a new ticket
+- **GET** `/tickets` - Get all tickets
+- **GET** `/tickets/{id}` - Get a ticket by ID
+- **PUT** `/tickets/{id}` - Update a complete ticket
+- **PATCH** `/tickets/{id}/status` - Update only the ticket status
+- **DELETE** `/tickets/{id}` - Delete a ticket
 
-### Estados de Ticket
+### Ticket States
 
-- `NEW` - Nuevo ticket
-- `OPEN` - Ticket abierto
-- `IN_PROGRESS` - En progreso
-- `RESOLVED` - Resuelto
-- `CLOSED` - Cerrado
+- `NEW` - New ticket
+- `OPEN` - Open ticket
+- `IN_PROGRESS` - In progress
+- `RESOLVED` - Resolved
+- `CLOSED` - Closed
 
 ## Package.json
 
-### Información General
-- **Nombre**: `ticket-system-backend`
-- **Versión**: `1.0.0`
-- **Licencia**: ISC
+### General Information
+- **Name**: `ticket-system-backend`
+- **Version**: `1.0.0`
+- **License**: ISC
 
-### Scripts Disponibles
+### Available Scripts
 
 ```bash
-# Ejecutar tests (no implementado)
+# Run tests (not implemented)
 npm test
 
-# Construir el proyecto con esbuild
+# Build project with esbuild
 npm run build
 
-# Crear archivo ZIP del empaquetado
+# Create ZIP package file
 npm run zip
 
-# Construir y empaquetar en un solo comando
+# Build and package in a single command
 npm run build-zip
 ```
 
-### Dependencias de Producción
+### Production Dependencies
 
-- **@aws-sdk/client-dynamodb**: Cliente oficial de AWS para DynamoDB
-- **@aws-sdk/lib-dynamodb**: Librería de utilidades para DynamoDB
-- **uuid**: Generación de identificadores únicos
-- **zod**: Validación de esquemas TypeScript
+- **@aws-sdk/client-dynamodb**: Official AWS DynamoDB client
+- **@aws-sdk/lib-dynamodb**: DynamoDB utility library
+- **uuid**: Unique identifier generation
+- **zod**: TypeScript schema validation
 
-### Dependencias de Desarrollo
+### Development Dependencies
 
-- **@types/aws-lambda**: Tipos TypeScript para AWS Lambda
-- **esbuild**: Bundler rápido para JavaScript/TypeScript
-- **typescript**: Compilador de TypeScript
+- **@types/aws-lambda**: TypeScript types for AWS Lambda
+- **esbuild**: Fast JavaScript/TypeScript bundler
+- **typescript**: TypeScript compiler
 
-## Configuración de TypeScript
+## TypeScript Configuration
 
-El proyecto está configurado con TypeScript usando:
+The project is configured with TypeScript using:
 - **Target**: ES2020
 - **Module**: CommonJS
-- **Strict Mode**: Habilitado
+- **Strict Mode**: Enabled
 - **Module Resolution**: Node.js
 - **Output Directory**: `dist/`
 
-## Despliegue en AWS Lambda
+## AWS Lambda Deployment
 
-### 1. Construir el Proyecto
+### Automated Deployment
+
+The project includes an automated deployment script that simplifies the process:
 
 ```bash
-# Instalar dependencias
+# Make the script executable (only first time)
+chmod +x deploy-lambda.sh
+
+# Run the deployment
+./deploy-lambda.sh
+```
+
+#### `deploy-lambda.sh` Script Functionality
+
+The script automatically performs the following actions:
+
+1. **Compiles the project** using `npm run build-zip`
+2. **Uploads the ZIP file** to AWS Lambda using AWS CLI
+3. **Updates the Lambda function** with the new code
+
+#### Script Configuration
+
+The script is configured with the following default values:
+- **Lambda Function**: `lmb-ticket`
+- **ZIP File**: `handlers.zip` (generated in `./dist/`)
+- **AWS Profile**: `lguisadom-iamadmin`
+- **AWS Region**: `us-east-2`
+
+#### Requirements
+
+To use the script you need:
+- AWS CLI installed and configured
+- AWS profile configured (`lguisadom-iamadmin`)
+- Permissions to update the Lambda function
+
+### Manual Deployment
+
+If you prefer to deploy manually:
+
+#### 1. Build the Project
+
+```bash
+# Install dependencies
 npm install
 
-# Construir y empaquetar
+# Build and package
 npm run build-zip
 ```
 
-### 2. Subir a AWS Lambda
+#### 2. Upload to AWS Lambda
 
 ```bash
-# Comando AWS CLI para actualizar la función Lambda
+# AWS CLI command to update Lambda function
 aws lambda update-function-code \
-  --function-name tu-funcion-lambda \
+  --function-name your-lambda-function \
   --zip-file fileb://deployment.zip \
-  --region tu-region-aws
+  --region your-aws-region
 ```
 
 Example:
 ```bash
-# Comando AWS CLI para actualizar la función Lambda
+# AWS CLI command to update Lambda function
 aws lambda update-function-code \
   --function-name lmb-ticket \
   --zip-file fileb://deployment.zip \
-  --region us-east-2
+  --region us-east-2 \
   --profile lguisadom-iamadmin
 ```
 
-### 3. Configuración Requerida
+### 3. Required Configuration
 
-Antes del despliegue, asegúrate de:
+Before deployment, make sure to:
 
-1. **Crear la tabla DynamoDB**: `dyn-tickets`
-2. **Configurar permisos IAM** para que Lambda pueda acceder a DynamoDB
-3. **Configurar API Gateway** para exponer los endpoints
-4. **Configurar variables de entorno** si es necesario
+1. **Create DynamoDB table**: `dyn-tickets`
+2. **Configure IAM permissions** for Lambda to access DynamoDB
+3. **Configure API Gateway** to expose endpoints
+4. **Configure environment variables** if necessary
 
-### Permisos IAM Mínimos
+### Minimum IAM Permissions
 
 ```json
 {
@@ -158,36 +197,36 @@ Antes del despliegue, asegúrate de:
 }
 ```
 
-## Desarrollo Local
+## Local Development
 
-### Requisitos
+### Requirements
 
 - Node.js 20+
-- AWS CLI configurado
-- Acceso a AWS DynamoDB
+- AWS CLI configured
+- Access to AWS DynamoDB
 
-### Comandos de Desarrollo
+### Development Commands
 
 ```bash
-# Instalar dependencias
+# Install dependencies
 npm install
 
-# Construir en modo desarrollo
+# Build in development mode
 npm run build
 
-# Verificar tipos TypeScript
+# Check TypeScript types
 npx tsc --noEmit
 ```
 
-## Documentación de la API
+## API Documentation
 
-La especificación completa de la API está disponible en `openapi/api.yaml` siguiendo el estándar OpenAPI 3.0.4.
+The complete API specification is available in `openapi/api.yaml` following the OpenAPI 3.0.4 standard.
 
-## Autor
+## Author
 
 - **Email**: lguisadom@gmail.com
 - **Blog**: https://blog.luisguisado.cloud
 
-## Licencia
+## License
 
 MIT License 
