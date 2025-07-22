@@ -5,8 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "esbuild src/handlers/index.ts --bundle --platform=node --target=node20 --outfile=dist/handlers/index.js",
-    "zip": "zip -r deployment.zip dist",
-    "build-zip": "esbuild src/handlers/index.ts --bundle --platform=node --target=node20 --outfile=dist/handlers/index.js && zip -r deployment.zip dist"
+    "build-zip": "esbuild src/handlers/index.ts --bundle --platform=node --target=node20 --outfile=dist/handlers/index.js && cd dist && zip -r handlers.zip handlers"
   },
   "keywords": [],
   "author": "",
