@@ -2,21 +2,42 @@
 
 ## Description
 
-This is a ticket management system backend built with **AWS Lambda** and **API Gateway** using **TypeScript**. The application provides a complete REST API for creating, reading, updating, and deleting technical support tickets.
+This repository is the implementation of a **Serverless Ticket Management System on AWS**, built following an **evolutionary monorepo approach**.
 
-## Architecture
+Initially, the project will function as a serverless monolith, with a single AWS Lambda function (`manage-tickets`) that will handle all CRUD operations for tickets, along with a DynamoDB table for data storage. Security will be progressively integrated using AWS Cognito for authentication and authorization.
 
+As the project matures, it will incrementally transform towards a logical microservices architecture.
+
+The infrastructure for all these microservices will be managed declaratively using Terraform, with well-defined modules for each service, which will demonstrate Infrastructure as Code (IaC) best practices in a serverless environment.
+
+This monorepo approach allows for gradual architecture evolution, facilitating learning of serverless, microservices, and IaC concepts while maintaining project coherence and ease of tracking.
+
+## Architecture Evolution
+
+### Phase 1: Serverless Monolith (Current)
 - **Runtime**: Node.js 20 (AWS Lambda)
 - **Database**: Amazon DynamoDB
 - **API**: REST API with AWS API Gateway
 - **Language**: TypeScript
 - **Bundler**: esbuild for optimization
 - **Validation**: Zod for schema validation
+- **Authentication**: AWS Cognito (planned)
+
+### Phase 2: Microservices Evolution (Future)
+- **Service Separation**: Logical microservices within the same monorepo
+- **Infrastructure**: Terraform modules for each service
+- **Services Planned**:
+  - **Ticket Service**: Core ticket management (current)
+  - **Notification Service**: Automated communications
+  - **User Service**: User profile and role management
+  - **Analytics Service**: Reporting and metrics
+- **Event-Driven Architecture**: AWS EventBridge for service communication
+- **API Gateway**: Centralized API management
 
 ## Project Structure
 
 ```
-ticket-system-backend/
+aws-serverless-ticket-system/
 ├── openapi/
 │   └── api.yaml          # OpenAPI 3.0 specification
 ├── src/
@@ -27,6 +48,12 @@ ticket-system-backend/
 │   ├── types/           # TypeScript types
 │   ├── utils/           # Utilities
 │   └── validations/     # Additional validations
+├── terraform/           # Infrastructure as Code (planned)
+│   ├── modules/
+│   │   ├── ticket-service/
+│   │   ├── notification-service/
+│   │   └── user-service/
+│   └── environments/
 ├── package.json
 ├── tsconfig.json
 └── README.md
@@ -34,14 +61,14 @@ ticket-system-backend/
 
 ## Features
 
-### API Endpoints
+### Current API Endpoints
 
-- **POST** `/tickets` - Create a new ticket
-- **GET** `/tickets` - Get all tickets
-- **GET** `/tickets/{id}` - Get a ticket by ID
-- **PUT** `/tickets/{id}` - Update a complete ticket
-- **PATCH** `/tickets/{id}/status` - Update only the ticket status
-- **DELETE** `/tickets/{id}` - Delete a ticket
+- **POST** `/v1/tickets` - Create a new ticket
+- **GET** `/v1/tickets` - Get all tickets
+- **GET** `/v1/tickets/{id}` - Get a ticket by ID
+- **PUT** `/v1/tickets/{id}` - Update a complete ticket (total replacement)
+- **PATCH** `/v1/tickets/{id}` - Update a ticket partially
+- **DELETE** `/v1/tickets/{id}` - Delete a ticket
 
 ### Ticket States
 
@@ -50,6 +77,15 @@ ticket-system-backend/
 - `IN_PROGRESS` - In progress
 - `RESOLVED` - Resolved
 - `CLOSED` - Closed
+
+### Planned Features
+
+- **Authentication & Authorization**: AWS Cognito integration
+- **Real-time Notifications**: WebSocket support via API Gateway
+- **File Attachments**: S3 integration for ticket attachments
+- **Advanced Search**: Elasticsearch integration
+- **Reporting & Analytics**: CloudWatch metrics and custom dashboards
+- **Multi-tenancy**: Support for multiple organizations
 
 ## Package.json
 
@@ -121,7 +157,7 @@ The script automatically performs the following actions:
 #### Script Configuration
 
 The script is configured with the following default values:
-- **Lambda Function**: `lmb-ticket`
+- **Lambda Function**: `manage-tickets`
 - **ZIP File**: `handlers.zip` (generated in `./dist/`)
 - **AWS Profile**: `lguisadom-iamadmin`
 - **AWS Region**: `us-east-2`
@@ -161,7 +197,7 @@ Example:
 ```bash
 # AWS CLI command to update Lambda function
 aws lambda update-function-code \
-  --function-name lmb-ticket \
+  --function-name manage-tickets \
   --zip-file fileb://deployment.zip \
   --region us-east-2 \
   --profile lguisadom-iamadmin
@@ -197,6 +233,47 @@ Before deployment, make sure to:
 }
 ```
 
+## Infrastructure as Code (Planned)
+
+### Terraform Modules Structure
+
+```
+terraform/
+├── modules/
+│   ├── ticket-service/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   ├── notification-service/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   ├── user-service/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── shared/
+│       ├── dynamodb.tf
+│       ├── cognito.tf
+│       └── api-gateway.tf
+├── environments/
+│   ├── dev/
+│   ├── staging/
+│   └── prod/
+└── examples/
+```
+
+### Planned Infrastructure Components
+
+- **Lambda Functions**: One per microservice
+- **DynamoDB Tables**: Separate tables per service
+- **API Gateway**: Centralized API management
+- **Cognito User Pool**: Authentication and authorization
+- **EventBridge**: Service-to-service communication
+- **CloudWatch**: Monitoring and logging
+- **S3**: File storage for attachments
+- **VPC**: Network isolation (if required)
+
 ## Local Development
 
 ### Requirements
@@ -204,6 +281,7 @@ Before deployment, make sure to:
 - Node.js 20+
 - AWS CLI configured
 - Access to AWS DynamoDB
+- Terraform (for future infrastructure management)
 
 ### Development Commands
 
@@ -216,11 +294,24 @@ npm run build
 
 # Check TypeScript types
 npx tsc --noEmit
+
+# Local testing with AWS SAM (planned)
+sam local start-api
 ```
 
 ## API Documentation
 
 The complete API specification is available in `openapi/api.yaml` following the OpenAPI 3.0.4 standard.
+
+## Contributing
+
+This project follows an evolutionary approach. Contributions should:
+
+1. **Maintain backward compatibility** during the monolith phase
+2. **Follow microservices principles** when adding new features
+3. **Include proper documentation** for all changes
+4. **Add tests** for new functionality
+5. **Update infrastructure code** when adding new services
 
 ## Author
 
