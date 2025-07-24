@@ -313,6 +313,7 @@ components:
         status:
           type: string
           enum: [NEW, OPEN, IN_PROGRESS, RESOLVED, CLOSED]
+          default: NEW
           description: Current status of the ticket
         reporterId:
           type: string
