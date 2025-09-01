@@ -7,6 +7,22 @@ import { NotFoundError } from "../errors/not-found-error";
 import { CreateTicketDto, CreateTicketRequest, PatchTicketDto, PatchTicketRequest, TicketIdParam, TicketIdParamDto, UpdateTicketDto, UpdateTicketRequest } from "../schemas/schemas";
 import { TicketService } from "../services/ticket-service";
 
+// CORS headers configuration
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*', // In production, specify your domain
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Api-Key',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE'
+};
+
+// Helper function to create CORS response
+function createCorsResponse(statusCode: number, body: string): APIGatewayProxyResult {
+  return {
+    statusCode,
+    headers: corsHeaders,
+    body
+  };
+}
+
 // Refactor: Functions for route handling
 async function handleCreateTicket(event: APIGatewayProxyEvent) {
   try {
@@ -24,10 +40,7 @@ async function handleCreateTicket(event: APIGatewayProxyEvent) {
     console.log("Create ticket", { body });
     const response = await TicketService.createTicket(createTicketDto);
 
-    return {
-      statusCode: 201,
-      body: JSON.stringify(response)
-    };
+    return createCorsResponse(201, JSON.stringify(response));
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error("Error issues", { issues: error.issues, message: error.message });
@@ -42,10 +55,7 @@ async function handleCreateTicket(event: APIGatewayProxyEvent) {
 async function handleGetAllTickets() {
   console.log("Get all tickets");
   const tickets = await TicketService.getAllTickets();
-  return {
-    statusCode: 200,
-    body: JSON.stringify(tickets)
-  };
+  return createCorsResponse(200, JSON.stringify(tickets));
 }
 
 async function handleGetTicketById(id: string) {
@@ -59,10 +69,7 @@ async function handleGetTicketById(id: string) {
       throw new NotFoundError(ErrorCodes.TICKET_NOT_FOUND, `ticket with id="${validatedParams.id}" not found`);
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(ticket)
-    };
+    return createCorsResponse(200, JSON.stringify(ticket));
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error("ID validation error", { issues: error.issues, message: error.message });
@@ -93,10 +100,7 @@ async function handleUpdateTicket(event: APIGatewayProxyEvent, id: string) {
     console.log(`Update ticket by id=${validatedParams.id}`);
     const updated = await TicketService.updateTicket(id, updateTicketDto);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(updated)
-    };
+    return createCorsResponse(200, JSON.stringify(updated));
 
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -127,10 +131,7 @@ async function handlePatchTicket(event: APIGatewayProxyEvent, id: string) {
     console.log(`Patch ticket by id=${validatedParams.id}`);
     const updated = await TicketService.patchTicket(id, patchTicketDto);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(updated)
-    };
+    return createCorsResponse(200, JSON.stringify(updated));
 
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -151,10 +152,7 @@ async function handleDeleteTicket(id: string) {
     await TicketService.deleteTicket(validatedParams.id);
 
 
-    return {
-      statusCode: 204,
-      body: ""
-    };
+    return createCorsResponse(204, "");
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error("ID validation error", { issues: error.issues, message: error.message });
@@ -191,11 +189,20 @@ function isPatchTicketRoute(method: string, path: string) {
   return method === "PATCH" && path.startsWith("/v1/tickets/") && path !== "/tickets";
 }
 
+function isOptionsRequest(method: string) {
+  return method === "OPTIONS";
+}
+
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     console.log("event: ", { event });
     const { httpMethod: method, path } = event;
     const id = event.pathParameters?.id;
+
+    // Handle CORS preflight requests
+    if (isOptionsRequest(method)) {
+      return createCorsResponse(200, "");
+    }
 
     if (isCreateTicketRoute(method, path)) {
       return await handleCreateTicket(event);
@@ -248,15 +255,15 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     // HttpError, BadRequestError, NotFoundError
     if (error instanceof HttpError) {
-      return {
-        statusCode: error.statusCode,
-        body: JSON.stringify({ code: error.code, message: error.message, details: error.details ?? undefined })
-      };
+      return createCorsResponse(
+        error.statusCode,
+        JSON.stringify({ code: error.code, message: error.message, details: error.details ?? undefined })
+      );
     }
 
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ code: ErrorCodes.INTERNAL_SERVER_ERROR, message: "Unexpected server error" })
-    };
+    return createCorsResponse(
+      500,
+      JSON.stringify({ code: ErrorCodes.INTERNAL_SERVER_ERROR, message: "Unexpected server error" })
+    );
   }
 }
