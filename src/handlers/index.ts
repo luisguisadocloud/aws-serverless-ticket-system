@@ -168,27 +168,27 @@ async function handleDeleteTicket(id: string) {
 
 // Refactor: Utility functions for routes
 function isCreateTicketRoute(method: string, path: string) {
-  return method === "POST" && path === "/tickets";
+  return method === "POST" && path === "/v1/tickets";
 }
 
 function isGetAllTicketsRoute(method: string, path: string) {
-  return method === "GET" && path === "/tickets";
+  return method === "GET" && path === "/v1/tickets";
 }
 
 function isGetTicketByIdRoute(method: string, path: string) {
-  return method === "GET" && path.startsWith("/tickets/") && path !== "/tickets";
+  return method === "GET" && path.startsWith("/v1/tickets/") && path !== "/tickets";
 }
 
 function isUpdateTicketRoute(method: string, path: string) {
-  return method === "PUT" && path.startsWith("/tickets/") && path !== "/tickets";
+  return method === "PUT" && path.startsWith("/v1/tickets/") && path !== "/tickets";
 }
 
 function isDeleteTicketRoute(method: string, path: string) {
-  return method === "DELETE" && path.startsWith("/tickets/") && path !== "/tickets";
+  return method === "DELETE" && path.startsWith("/v1/tickets/") && path !== "/tickets";
 }
 
 function isPatchTicketRoute(method: string, path: string) {
-  return method === "PATCH" && path.startsWith("/tickets/") && path !== "/tickets";
+  return method === "PATCH" && path.startsWith("/v1/tickets/") && path !== "/tickets";
 }
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
