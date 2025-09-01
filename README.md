@@ -69,6 +69,86 @@ aws-serverless-ticket-system/
 - **PUT** `/v1/tickets/{id}` - Update a complete ticket (total replacement)
 - **PATCH** `/v1/tickets/{id}` - Update a ticket partially
 - **DELETE** `/v1/tickets/{id}` - Delete a ticket
+- **OPTIONS** `/v1/tickets*` - CORS preflight requests (handled automatically)
+
+### CORS Support
+
+The API includes comprehensive CORS (Cross-Origin Resource Sharing) support to enable frontend applications to communicate with the backend from different domains.
+
+#### CORS Headers Configuration
+
+All API responses include the following CORS headers:
+
+```typescript
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Api-Key',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE'
+};
+```
+
+#### Preflight Request Handling
+
+The Lambda function automatically handles OPTIONS requests (CORS preflight) for all endpoints, returning a 200 status with appropriate CORS headers.
+
+#### Production CORS Best Practices
+
+**⚠️ Security Warning**: The current configuration uses `Access-Control-Allow-Origin: *` which allows any domain to access your API. This is suitable for development and public APIs but requires careful consideration for production.
+
+**For Production Environments:**
+
+1. **Restrict Origin Access:**
+   ```typescript
+   // Instead of '*', specify allowed domains
+   'Access-Control-Allow-Origin': 'https://yourdomain.com'
+   
+   // Or use a function to validate origins
+   const allowedOrigins = [
+     'https://yourdomain.com',
+     'https://app.yourdomain.com',
+     'https://staging.yourdomain.com'
+   ];
+   ```
+
+2. **Environment-Based Configuration:**
+   ```typescript
+   const corsHeaders = {
+     'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || '*',
+     'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Api-Key',
+     'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE',
+     'Access-Control-Max-Age': '86400' // Cache preflight for 24 hours
+   };
+   ```
+
+3. **Dynamic Origin Validation:**
+   ```typescript
+   function getCorsHeaders(origin: string): Record<string, string> {
+     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
+     const isAllowed = allowedOrigins.includes('*') || allowedOrigins.includes(origin);
+     
+     return {
+       'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0],
+       'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Api-Key',
+       'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE',
+       'Access-Control-Max-Age': '86400'
+     };
+   }
+   ```
+
+4. **Additional Security Headers:**
+   ```typescript
+   const securityHeaders = {
+     'X-Content-Type-Options': 'nosniff',
+     'X-Frame-Options': 'DENY',
+     'X-XSS-Protection': '1; mode=block',
+     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+   };
+   ```
+
+5. **Rate Limiting:**
+   - Implement rate limiting at API Gateway level
+   - Use AWS WAF for advanced traffic filtering
+   - Monitor requests with CloudWatch
 
 ### Ticket States
 
@@ -211,6 +291,82 @@ Before deployment, make sure to:
 2. **Configure IAM permissions** for Lambda to access DynamoDB
 3. **Configure API Gateway** to expose endpoints
 4. **Configure environment variables** if necessary
+5. **Configure CORS settings** in API Gateway (optional but recommended)
+
+#### CORS Configuration in API Gateway
+
+There are two main approaches to handle CORS in API Gateway when using Lambda Proxy integration:
+
+##### **Approach 1: Mock Integration for OPTIONS Endpoints**
+
+Create separate OPTIONS endpoints for each route that handle preflight requests independently:
+
+1. **Create OPTIONS endpoint for `/v1/tickets`:**
+   - **Method**: OPTIONS
+   - **Integration Type**: Mock
+   - **Response Headers**:
+     ```
+     Access-Control-Allow-Origin: '*'
+     Access-Control-Allow-Headers: 'Content-Type,Authorization,X-Api-Key'
+     Access-Control-Allow-Methods: 'GET,POST,PUT,PATCH,DELETE'
+     ```
+
+2. **Create OPTIONS endpoint for `/v1/tickets/{id}`:**
+   - **Method**: OPTIONS  
+   - **Integration Type**: Mock
+   - **Response Headers**:
+     ```
+     Access-Control-Allow-Origin: '*'
+     Access-Control-Allow-Headers: 'Content-Type,Authorization,X-Api-Key'
+     Access-Control-Allow-Methods: 'GET,POST,PUT,PATCH,DELETE'
+     ```
+
+**Steps in AWS Console:**
+1. Go to API Gateway → Your API → Resources
+2. Select the resource (e.g., `/v1/tickets`)
+3. Click **Actions** → **Create Method**
+4. Select **OPTIONS** as the method
+5. Choose **Mock** as integration type
+6. Configure the response headers in the integration response
+7. Deploy the API
+
+##### **Approach 2: Lambda Proxy Integration (Current Implementation)**
+
+Let the Lambda function handle all CORS logic, including preflight requests:
+
+- **All endpoints** (including OPTIONS) use Lambda Proxy integration
+- **Lambda function** handles OPTIONS requests and returns appropriate CORS headers
+- **No additional API Gateway configuration** needed for CORS
+- **More control** over CORS logic in your application code
+
+**Current Implementation:**
+```typescript
+// Lambda function handles OPTIONS requests
+if (isOptionsRequest(method)) {
+  return createCorsResponse(200, "");
+}
+
+// All other responses include CORS headers
+function createCorsResponse(statusCode: number, body: string): APIGatewayProxyResult {
+  return {
+    statusCode,
+    headers: corsHeaders,
+    body
+  };
+}
+```
+
+##### **Comparison of Approaches**
+
+| Aspect | Mock Integration | Lambda Proxy Integration |
+|--------|------------------|-------------------------|
+| **Setup Complexity** | High (manual endpoint creation) | Low (handled in code) |
+| **Maintenance** | Requires API Gateway changes | Code-only changes |
+| **Flexibility** | Limited to API Gateway options | Full control in Lambda |
+| **Performance** | Slightly faster (no Lambda execution) | Lambda cold start for OPTIONS |
+| **Consistency** | Separate configuration per endpoint | Centralized in Lambda |
+
+**Recommendation**: Use **Lambda Proxy Integration** (Approach 2) for simplicity and consistency, especially when you need dynamic CORS logic or want to keep all API logic in your Lambda function.
 
 ### Minimum IAM Permissions
 
@@ -273,6 +429,35 @@ terraform/
 - **CloudWatch**: Monitoring and logging
 - **S3**: File storage for attachments
 - **VPC**: Network isolation (if required)
+- **WAF (Web Application Firewall)**: Traffic filtering and DDoS protection
+- **CloudFront**: Content delivery and edge security
+
+### Security Considerations
+
+#### CORS Security in Production
+
+1. **Origin Validation:**
+   - Never use `Access-Control-Allow-Origin: *` in production
+   - Implement dynamic origin validation based on environment
+   - Use environment variables for allowed origins
+
+2. **API Gateway Security:**
+   - Enable AWS WAF for advanced traffic filtering
+   - Configure rate limiting per API key or IP
+   - Use API keys for public endpoints
+   - Implement request throttling
+
+3. **Lambda Security:**
+   - Use least privilege IAM roles
+   - Encrypt environment variables
+   - Implement input validation and sanitization
+   - Use AWS Secrets Manager for sensitive data
+
+4. **Monitoring and Alerting:**
+   - Set up CloudWatch alarms for unusual traffic patterns
+   - Monitor CORS preflight requests
+   - Alert on failed authentication attempts
+   - Track API usage and performance metrics
 
 ## Local Development
 
