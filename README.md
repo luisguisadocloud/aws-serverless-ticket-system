@@ -12,6 +12,14 @@ The infrastructure for all these microservices will be managed declaratively usi
 
 This monorepo approach allows for gradual architecture evolution, facilitating learning of serverless, microservices, and IaC concepts while maintaining project coherence and ease of tracking.
 
+## Architecture
+
+![Architecture Diagram](docs/architecture/architecture.png)
+
+### System Overview
+
+The AWS Serverless Ticket System follows an evolutionary architecture approach, starting as a serverless monolith and gradually evolving towards microservices.
+
 ## Architecture Evolution
 
 ### Phase 1: Serverless Monolith (Current)
@@ -38,6 +46,10 @@ This monorepo approach allows for gradual architecture evolution, facilitating l
 
 ```
 aws-serverless-ticket-system/
+├── docs/
+│   └── architecture/
+│       └── architecture.png
+│       
 ├── openapi/
 │   └── api.yaml          # OpenAPI 3.0 specification
 ├── src/
